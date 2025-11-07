@@ -27,6 +27,7 @@ class AutoMoveTask(BaseCombatTask, TriggerTask):
         })
         self.listener = None
         self.manual_activate = False
+        self.signal = False
         self.is_down = False
         self._executor.exit_event.bind_stop(self)
 
@@ -40,14 +41,20 @@ class AutoMoveTask(BaseCombatTask, TriggerTask):
 
     def stop(self):
         self.manual_activate = False
+        self.signal = False
         if self.listener:
             self.listener.stop()
             self.listener = None
     
     def run(self):
+        if self.signal:
+            self.signal = False
+            if self.in_team() and og.device_manager.hwnd_window.is_foreground():
+                self.switch_state()
+        
         if not self.in_team():
             return
-        
+
         if not self.listener:
             self.listener = mouse.Listener(on_click=self.on_click)
             # self.listener = keyboard.Listener(on_press=self.on_press)
@@ -81,24 +88,28 @@ class AutoMoveTask(BaseCombatTask, TriggerTask):
             s = step if remaining > step else remaining
             self.sleep(s)
             remaining -= s
+            if self.signal:
+                self.switch_state()
             if not self.manual_activate:
                 raise TriggerDeactivateException()
+            
+    def switch_state(self):
+        self.signal = False
+        self.manual_activate = not self.manual_activate
+        if self.manual_activate:
+            logger.info("激活快速移动")
+        else:
+            logger.info("关闭快速移动")
         
     def on_click(self, x, y, button, pressed):
         if self._executor.paused:
-            return
-        if not self.in_team() or not og.device_manager.hwnd_window.is_foreground():
             return
         if self.config.get('激活键', 'x2') == 'x1':
             btn = mouse.Button.x1
         else:
             btn = mouse.Button.x2
         if pressed and button == btn:
-            self.manual_activate = not self.manual_activate
-            if self.manual_activate:
-                logger.info("激活快速移动")
-            else:
-                logger.info("关闭快速移动")
+            self.signal = True
 
     # def on_press(self, key):
     #     if self._executor.paused:

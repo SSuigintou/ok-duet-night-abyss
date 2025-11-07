@@ -10,6 +10,7 @@ class CombatCheck(BaseDNATask):
         self.last_combat_check = 0
         self.combat_check_interval = 0.5
         self.out_of_combat_reason = ""
+        self.manual_in_combat = False
 
     def in_combat(self):
         """检查当前是否处于战斗状态。
@@ -20,7 +21,7 @@ class CombatCheck(BaseDNATask):
         if self._in_combat:
             now = time.time()
             if now - self.last_combat_check > self.combat_check_interval:
-                in_combat = getattr(self, "manual_in_combat", False)
+                in_combat = self.manual_in_combat and self.in_team()
                 self.last_combat_check = now
                 if in_combat:
                     return True
@@ -42,3 +43,4 @@ class CombatCheck(BaseDNATask):
     
     def do_reset_to_false(self):
         self._in_combat = False
+        self.manual_in_combat = False
