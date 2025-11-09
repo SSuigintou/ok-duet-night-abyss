@@ -81,10 +81,10 @@ class Auto70jjbTask(DNAOneTimeTask, CommissionsTask, BaseCombatTask):
                 else:
                     self.log_info('任务完成')
                 self.wait_until(self.in_team, time_out=30)                
-                win32gui.SendMessage(self.hwnd.hwnd, win32con.WM_KEYDOWN, 0xA4, 0)
+                self.send_vk_down(win32con.VK_LSHIFT)
                 self.sleep(2)
                 self.walk_to_aim()
-                win32gui.SendMessage(self.hwnd.hwnd, win32con.WM_KEYUP, 0xA4, 0)
+                self.send_vk_up(win32con.VK_LSHIFT)
                 _wave_start = time.time()
                 self.current_wave = -1
                 while self.current_wave == -1 and time.time() - _wave_start < 2:
