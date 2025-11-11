@@ -57,6 +57,7 @@ class AutoMoveTask(BaseListenerTask, BaseDNATask, TriggerTask):
                 logger.info(f'auto_move_task_deactivate {e}')
                 break
         if self.is_down:
+            self.is_down = False
             self.mouse_up()
         return 
     
