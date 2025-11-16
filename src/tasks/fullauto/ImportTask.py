@@ -10,7 +10,7 @@ import numpy as np
 
 from pathlib import Path
 from PIL import Image
-from ok import Logger, TaskDisabledException
+from ok import Logger, TaskDisabledException, GenshinInteraction
 from ok import find_boxes_by_name
 from src.tasks.DNAOneTimeTask import DNAOneTimeTask
 from src.tasks.CommissionsTask import CommissionsTask, Mission, QuickMoveTask
@@ -222,9 +222,11 @@ class ImportTask(DNAOneTimeTask, CommissionsTask, BaseCombatTask):
         max_index = None
 
         for i, name in enumerate(self.img):
+            if index is None and not re.search(r'[a-zA-Z]$', name):
+                continue
             if index is not None and not (index in name and len(name) - len(index) <= 3):
                 continue
-            if index == name:
+            if index is not None and index == name:
                 continue
             count += 1
             img = self.img[name]
@@ -292,12 +294,47 @@ class ImportTask(DNAOneTimeTask, CommissionsTask, BaseCombatTask):
                 action['key'] = normalize_key(action['key'])
                 if action['key'] != 'f4':
                     self.send_key_up(action['key'])
+            elif action['type'] == "mouse_rotation":
+                self.execute_mouse_rotation(action)
+            elif action['type'] == "mouse_move":
+                self.execute_mouse_move(action['dx'], action['dy'])
             else:
                 raise
         except:
             self.log_info(f"不支持的按键-> type: {action['type']} key: {action['key']}")
             raise
 
+    def execute_mouse_rotation(self, action):
+        direction = action.get("direction", "up")
+        angle = action.get("angle", 0)
+        sensitivity = action.get("sensitivity", 10)
+
+        pixels = angle * sensitivity
+
+        if direction == "left":
+            dx, dy = -pixels, 0
+        elif direction == "right":
+            dx, dy = pixels, 0
+        elif direction == "up":
+            dx, dy = 0, -pixels
+        elif direction == "down":
+            dx, dy = 0, pixels
+        else:
+            logger.warning(f"未知的鼠标方向: {direction}")
+            return
+        self.execute_mouse_move(dx, dy)
+        logger.debug(f"鼠标视角旋转: {direction}, 角度: {angle}, 像素: {pixels}")
+        
+    def execute_mouse_move(self, dx, dy):
+        interaction = self.executor.interaction
+        _genshin_interaction = GenshinInteraction(
+                interaction.capture, self.hwnd
+            )
+            # 确保窗口在前台
+        self.hwnd.bring_to_front()
+        _genshin_interaction.move_mouse_relative(int(dx), int(dy))
+
+        
 
 def normalize_key(key: str) -> str:
     """
@@ -308,3 +345,4 @@ def normalize_key(key: str) -> str:
     if isinstance(key, str) and key.lower() == 'ctrl':
         return 'lcontrol'
     return key
+
