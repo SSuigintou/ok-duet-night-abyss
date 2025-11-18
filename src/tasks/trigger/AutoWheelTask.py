@@ -19,6 +19,11 @@ class AutoWheelTask(BaseDNATask, TriggerTask):
         self.mech_angle = []
         self.first_sleep = True
         self.img_croppe = None
+        self._puzzle_solved = False
+
+    @property
+    def puzzle_solved(self):
+        return self._puzzle_solved
         
     def solve_mech_wheel(self, mech_wheel, control):
         """
@@ -319,6 +324,7 @@ class AutoWheelTask(BaseDNATask, TriggerTask):
         return self.ring_mask(self.img_croppe, 0.67, 0.75)
 
     def run(self):
+        self._puzzle_solved = False
         if self.scene.in_team(self.in_team_and_world):
             self.first_sleep = True
             return
@@ -367,3 +373,4 @@ class AutoWheelTask(BaseDNATask, TriggerTask):
             if len(solution) == 0:
                 break
             self.next_frame()
+        self._puzzle_solved = True
