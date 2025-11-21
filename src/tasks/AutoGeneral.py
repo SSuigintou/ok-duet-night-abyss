@@ -28,7 +28,7 @@ class AutoGeneral(DNAOneTimeTask, CommissionsTask, BaseCombatTask):
 
         self.default_config.update({
             '轮次': 3,
-            "启动解锁机关": True,
+            "启动机关解锁": True,
         })
 
         self.setup_commission_config()
