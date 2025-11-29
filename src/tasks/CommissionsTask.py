@@ -1,5 +1,6 @@
 import re
 import time
+import random
 from enum import Enum
 
 from ok import find_boxes_by_name, TaskDisabledException
@@ -113,14 +114,11 @@ class CommissionsTask(BaseDNATask):
 
     def start_mission(self, timeout=0):
         action_timeout = self.action_timeout if timeout == 0 else timeout
-        box = self.box_of_screen_scaled(2560, 1440, 60, 1029, 2056, 1332, name="reward_drag_area", hcenter=True)
+        box = self.box_of_screen_scaled(2560, 1440, 69, 969, 2498, 1331, name="reward_drag_area", hcenter=True)
         start_time = time.time()
         while time.time() - start_time < action_timeout:
-            if btn := self.find_retry_btn() or self.find_bottom_start_btn() or self.find_big_bottom_start_btn():
-                self.move_mouse_to_safe_position(box=box)
-                self.click_box(btn, after_sleep=0)
-                self.move_back_from_safe_position()
-            self.sleep(0.2)
+            if (btn := self.find_retry_btn() or self.find_bottom_start_btn() or self.find_big_bottom_start_btn()):
+                self.click_box_random(btn, use_safe_move=True, safe_move_box=box, right_extend=0.1, after_sleep=0.2)
             if self.wait_until(condition=lambda: self.find_start_btn() or self.find_letter_interface(), time_out=1):
                 break
             if self.find_retry_btn() and self.calculate_color_percentage(retry_btn_color,
@@ -134,10 +132,9 @@ class CommissionsTask(BaseDNATask):
     def quit_mission(self, timeout=0):
         action_timeout = self.action_timeout if timeout == 0 else timeout
         quit_btn = self.wait_until(self.find_quit_btn, time_out=action_timeout, raise_if_not_found=True)
-        self.sleep(0.5)
         self.wait_until(
             condition=lambda: not self.find_quit_btn(),
-            post_action=lambda: self.click_box(quit_btn, after_sleep=0.25),
+            post_action=lambda: self.click_box_random(quit_btn, right_extend=0.1, post_sleep=0, after_sleep=0.25),
             time_out=action_timeout,
             raise_if_not_found=True,
         )
@@ -154,14 +151,14 @@ class CommissionsTask(BaseDNATask):
         if self.open_in_mission_menu(time_out=10, raise_if_not_found=False):
             self.wait_until(
                 condition=lambda: self.find_start_btn(box=box),
-                post_action=lambda: self.click_relative(0.95, 0.91, after_sleep=0.25),
+                post_action=lambda: self.click_relative_random(0.885, 0.875, 0.965, 0.954, after_sleep=0.25),
                 time_out=action_timeout,
                 raise_if_not_found=True,
             )
             self.sleep(0.5)
             self.wait_until(
                 condition=lambda: not self.find_start_btn(box=box),
-                post_action=lambda: self.click_box(self.find_start_btn(box=box), after_sleep=0.25),
+                post_action=lambda: self.click_box_random(self.find_start_btn(box=box), right_extend=0.1, after_sleep=0.25),
                 time_out=action_timeout,
                 raise_if_not_found=True,
             )
@@ -175,7 +172,7 @@ class CommissionsTask(BaseDNATask):
         continue_btn = self.wait_until(self.find_continue_btn, time_out=action_timeout, raise_if_not_found=True)
         self.wait_until(
             condition=lambda: not self.find_continue_btn(),
-            post_action=lambda: self.click_box(continue_btn, after_sleep=0.25),
+            post_action=lambda: self.click_box_random(continue_btn, right_extend=0.1, up_extend=-0.002, down_extend=-0.002, post_sleep=0, after_sleep=0.25),
             time_out=action_timeout,
             raise_if_not_found=True,
         )
@@ -185,7 +182,7 @@ class CommissionsTask(BaseDNATask):
     def choose_drop_rate(self, timeout=0):
         def click_drop_rate_btn():
             if (box:=self.find_drop_rate_btn()):
-                self.click_box(box, after_sleep=0.25)
+                self.click_box_random(box, right_extend=0.1, after_sleep=0.25)
         action_timeout = self.action_timeout if timeout == 0 else timeout
         self.sleep(0.5)
         self.choose_drop_rate_item()
@@ -210,13 +207,13 @@ class CommissionsTask(BaseDNATask):
             elif self.current_round == 0 or (self.current_round + 1) not in round_to_use:
                 return
         if drop_rate == "100%":
-            self.click_relative(0.40, 0.56)
+            self.click_relative_random(0.369, 0.509, 0.444, 0.581)
         elif drop_rate == "200%":
-            self.click_relative(0.50, 0.56)
+            self.click_relative_random(0.462, 0.509, 0.538, 0.607)
         elif drop_rate == "800%":
-            self.click_relative(0.59, 0.56)
+            self.click_relative_random(0.556, 0.509, 0.632, 0.608)
         elif drop_rate == "2000%":
-            self.click_relative(0.68, 0.56)
+            self.click_relative_random(0.650, 0.509, 0.726, 0.581)
         self.log_info(f"使用委托手册: {drop_rate}")
         self.sleep(0.25)
 
@@ -225,19 +222,21 @@ class CommissionsTask(BaseDNATask):
             return
         action_timeout = self.action_timeout if timeout == 0 else timeout
         if self.config.get("自动选择首个密函和密函奖励", False):
-            if self.find_letter_interface():
+            if (letter_btn:=self.find_letter_interface()):
                 box = self.box_of_screen_scaled(2560, 1440, 1195, 612, 2449, 817, name="letter_drag_area", hcenter=True)
+                letter_roi = self.box_of_screen_scaled(2560, 1440, 565, 651, 732, 805, name="letter_roi", hcenter=True)
+                letter_snapshot = letter_roi.crop_frame(self.frame)
                 self.sleep(0.1)
-                self.move_mouse_to_safe_position(box=box)
-                self.click(0.56, 0.5, down_time=0.02)
-                self.move_back_from_safe_position()
-                self.sleep(0.1)
+                self.click_relative_random(0.531, 0.441, 0.577, 0.551, use_safe_move=True, safe_move_box=box, down_time=0.02)
+                self.sleep(0.3)
+                if self.find_one(template=letter_snapshot, box=letter_roi, threshold=0.7):
+                    self.log_info_notify("密函已耗尽")
+                    self.soundBeep()
+                    raise TaskDisabledException
                 self.wait_until(
                     condition=lambda: not self.find_letter_interface(),
                     post_action=lambda: (
-                        self.move_mouse_to_safe_position(box=box),
-                        self.click(0.79, 0.61),
-                        self.move_back_from_safe_position(),
+                        self.click_box_random(letter_btn, use_safe_move=True, safe_move_box=box, right_extend=0.1),
                         self.sleep(1),
                     ),
                     time_out=action_timeout,
@@ -313,7 +312,7 @@ class CommissionsTask(BaseDNATask):
 
         if target_item:
             self.log_info(f"策略[{strategy}] -> 选择第 {target_item['index']} 个奖励，持有数: {target_item['count']}")
-            self.click_box(target_item['reward_obj'], down_time=0.02, after_sleep=0.5)
+            self.click_box_random(target_item['reward_obj'], left_extend=0.015, right_extend=0.015, up_extend=0.03, down_extend=0.03, down_time=0.02, after_sleep=0.5)
 
     def choose_letter_reward(self, timeout=0):
         if not hasattr(self, "config"):
@@ -324,7 +323,7 @@ class CommissionsTask(BaseDNATask):
                 self.choose_target_letter_reward()
             self.wait_until(
                 condition=lambda: not self.find_letter_reward_btn(),
-                post_action=lambda: self.click(0.50, 0.83, after_sleep=0.25),
+                post_action=lambda: self.click_relative_random(0.420, 0.812, 0.580, 0.847, after_sleep=0.25),
                 time_out=action_timeout,
                 raise_if_not_found=True,
             )
@@ -363,7 +362,47 @@ class CommissionsTask(BaseDNATask):
             elif self.config.get("使用技能") == "魔灵支援":
                 self.get_current_char().send_geniemon_key()
 
-        return self.create_ticker(action, interval=lambda: self.config.get("技能释放频率", 5))
+        return self.create_ticker(action, interval=lambda: self.config.get("技能释放频率", 5), interval_random_range=(0.8, 1.2))
+    
+    def setup_jitter(self):
+        def _jitter_loop_task():
+            current_drift = [0, 0]
+            if self.executor.current_task:
+                self.log_info("jitter loop task start")
+            while self.executor.current_task is not None and not self.executor.exit_event.is_set():
+                if self.executor.paused:
+                    time.sleep(0.1)
+                    continue
+                if self.afk_config.get("鼠标抖动强制在游戏窗口内", True):
+                    self.set_mouse_in_window()
+
+                dist_sq = current_drift[0]**2 + current_drift[1]**2
+                
+                # 距离原点太近(<2px) -> 往外润 (3~5px)
+                if dist_sq < 4:
+                    target_x = random.choice([-3, -2, 2, 3])
+                    target_y = random.choice([-3, -2, 2, 3])
+                # 距离原点太远 -> 往回拉 (目标是原点附近的 -1~1px)
+                else:
+                    target_x = random.randint(-1, 1)
+                    target_y = random.randint(-1, 1)
+
+                move_x = target_x - current_drift[0]
+                move_y = target_y - current_drift[1]
+
+                if move_x != 0 or move_y != 0:
+                    self.genshin_interaction.do_move_mouse_relative(move_x, move_y)
+                    current_drift[0] += move_x
+                    current_drift[1] += move_y
+
+                deadline = time.time() + random.uniform(3.0, 6.0)
+                while time.time() < deadline:
+                    if self.executor.current_task is None or self.executor.exit_event.is_set():
+                        self.log_info("jitter loop task stopped")
+                        return
+                    time.sleep(0.1)
+
+        self.thread_pool_executor.submit(_jitter_loop_task)
 
     def get_round_info(self):
         """获取并更新当前轮次信息。"""
@@ -483,7 +522,7 @@ class CommissionsTask(BaseDNATask):
         self.sleep(0.8)
         self.wait_until(
             condition=lambda: not self.find_esc_menu(),
-            post_action=self.click(0.73, 0.92, after_sleep=0.5),
+            post_action=self.click_relative_random(0.688, 0.875, 0.770, 0.956, after_sleep=0.5),
             time_out=10,
         )
         setting_box = self.box_of_screen_scaled(2560, 1440, 738, 4, 1123, 79, name="other_section", hcenter=True)
@@ -491,21 +530,16 @@ class CommissionsTask(BaseDNATask):
                                         raise_if_not_found=True)
         self.wait_until(
             condition=lambda: self.calculate_color_percentage(setting_menu_selected_color, setting_other) > 0.24,
-            post_action=lambda: self.click_box(setting_other, after_sleep=0.5),
+            post_action=lambda: self.click_box_random(setting_other, after_sleep=0.5),
             time_out=10,
         )
         confirm_box = self.box_of_screen_scaled(2560, 1440, 1298, 776, 1368, 843, name="confirm_btn", hcenter=True)
         self.wait_until(
             condition=lambda: self.find_start_btn(box=confirm_box),
-            post_action=lambda: (
-                self.move_mouse_to_safe_position(),
-                self.click(0.60, 0.32),
-                self.move_back_from_safe_position(),
-                self.sleep(1),
-            ),
+            post_action=lambda: self.click_relative_random(0.501, 0.294, 0.690, 0.325, use_safe_move=True, after_sleep=0.5),
             time_out=10,
         )
-        if not self.wait_until(condition=self.in_team, post_action=self.click(0.59, 0.56, after_sleep=0.5),
+        if not self.wait_until(condition=self.in_team, post_action=lambda: self.click_relative_random(0.514, 0.547, 0.671, 0.578, after_sleep=0.5),
                                time_out=10):
             self.ensure_main()
             return False

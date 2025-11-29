@@ -5,11 +5,13 @@ import cv2
 import winsound
 import win32api
 import win32con
+import random
+
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
 
-from ok import BaseTask, Box, Logger, color_range_to_bound, run_in_new_thread, og, GenshinInteraction
+from ok import BaseTask, Box, Logger, color_range_to_bound, run_in_new_thread, og, GenshinInteraction, PyDirectInteraction
 
 logger = Logger.get_logger(__name__)
 f_black_color = {
@@ -98,6 +100,15 @@ class BaseDNATask(BaseTask):
         """
         # 确保引用的是正确的类
         return GenshinInteraction(self.executor.interaction.capture, self.hwnd)
+    
+    @cached_property
+    def pydirect_interaction(self):
+        """
+        缓存 Interaction 实例，避免每次鼠标移动都重新创建对象。
+        需要确保 self.executor.interaction 和 self.hwnd 在此类初始化时可用。
+        """
+        # 确保引用的是正确的类
+        return PyDirectInteraction(self.executor.interaction.capture, self.hwnd)
 
     def in_team(self) -> bool:
         frame = self.frame
@@ -289,6 +300,74 @@ class BaseDNATask(BaseTask):
         return (win_x <= mouse_x < win_x + hwnd_window.window_width) and \
             (win_y <= mouse_y < win_y + hwnd_window.window_height)
     
+    def set_mouse_in_window(self):
+        """
+        设置鼠标在游戏窗口范围内。
+        """
+        if self.is_mouse_in_window():
+            return
+        random_x = random.randint(self.width_of_screen(0.2), self.width_of_screen(0.8))
+        random_y = random.randint(self.height_of_screen(0.2), self.height_of_screen(0.8))
+        abs_pos = self.executor.interaction.capture.get_abs_cords(random_x, random_y)
+        win32api.SetCursorPos(abs_pos)
+    
+    def _perform_random_click(self, x_abs, y_abs, use_safe_move=False, safe_move_box=None, down_time=0.0, post_sleep=0.0, after_sleep=0.0):
+        x = int(x_abs)
+        y = int(y_abs)
+
+        down_time = random.uniform(0.05, 0.12) + down_time
+        after_sleep = random.uniform(0.08, 0.15) + after_sleep
+        post_sleep = 0.15 if post_sleep < 0.15 else post_sleep
+
+        if not self.hwnd.is_foreground():
+            interval = random.uniform(0.08, 0.15)
+            self.sleep(random.uniform(0.08, post_sleep))
+            if use_safe_move:
+                self.move_mouse_to_safe_position(box=safe_move_box)
+            self.click(x, y, down_time=down_time, interval=interval)
+            if use_safe_move:
+                self.move_back_from_safe_position()
+        else:
+            self.sleep(random.uniform(0.08, post_sleep))
+            self.pydirect_interaction.move(x, y)
+            self.sleep(random.uniform(0.08, 0.12))
+            self.pydirect_interaction.click(down_time=down_time)
+
+        self.sleep(after_sleep)
+    
+    def click_box_random(self, box: Box, down_time=0.0, post_sleep=1.5, after_sleep=0.0, use_safe_move=False, safe_move_box=None, left_extend=0.0, right_extend=0.0, up_extend=0.0, down_extend=0.0):
+        le_px = left_extend * self.width
+        re_px = right_extend * self.width
+        ue_px = up_extend * self.height
+        de_px = down_extend * self.height
+
+        random_x = random.uniform(box.x - le_px, box.x + box.width + re_px)
+        random_y = random.uniform(box.y - ue_px, box.y + box.height + de_px)
+
+        self._perform_random_click(
+            random_x, random_y, 
+            use_safe_move, safe_move_box, 
+            down_time, post_sleep, after_sleep
+        )
+
+    def click_relative_random(self, x1, y1, x2, y2, down_time=0.02, post_sleep=1.5, after_sleep=0.0, use_safe_move=False, safe_move_box=None):
+        r_x = random.uniform(x1, x2)
+        r_y = random.uniform(y1, y2)
+
+        abs_x = self.width_of_screen(r_x)
+        abs_y = self.height_of_screen(r_y)
+
+        self._perform_random_click(
+            abs_x, abs_y, 
+            use_safe_move, safe_move_box, 
+            down_time, post_sleep, after_sleep
+        )
+
+    def sleep_random(self, timeout, random_range: tuple = (1.0, 1.0)):
+        multiplier = random.uniform(random_range[0], random_range[1])
+        final_timeout = timeout * multiplier
+        self.sleep(final_timeout)
+
     def is_mouse_in_box(self, box: Box) -> bool:
         """
         检测鼠标是否在给定的 Box 内。
@@ -325,7 +404,7 @@ class BaseDNATask(BaseTask):
         win32api.SetCursorPos(abs_pos)
         return True
 
-    def create_ticker(self, action: Callable, interval: Union[float, int, Callable] = 1.0) -> Ticker:
+    def create_ticker(self, action: Callable, interval: Union[float, int, Callable] = 1.0, interval_random_range: tuple = (1.0, 1.0)) -> Ticker:
         last_time = 0
         armed = False
 
@@ -345,7 +424,8 @@ class BaseDNATask(BaseTask):
                 armed = False
                 return
 
-            current_interval = get_interval()
+            multiplier = random.uniform(interval_random_range[0], interval_random_range[1])
+            current_interval = get_interval() * multiplier
 
             if now - last_time >= current_interval:
                 last_time = now
