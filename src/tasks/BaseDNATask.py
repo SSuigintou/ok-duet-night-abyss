@@ -525,6 +525,10 @@ class BaseDNATask(BaseTask):
     def setup_jitter(self):
         def _jitter_loop_task():
             current_drift = [0, 0]
+            spiral_key = self.get_spiral_dive_key()
+            numeric_keys = [str(i) for i in range(1, 6) if str(i) != spiral_key][:4]
+            random_key = [self.key_config['Geniemon Key']] + numeric_keys
+
             if self.executor.current_task:
                 self.log_info("jitter loop task start")
             while self.executor.current_task is not None and not self.executor.exit_event.is_set():
@@ -535,7 +539,7 @@ class BaseDNATask(BaseTask):
                 #     time.sleep(1)
                 #     continue
 
-                key = random.choice([self.key_config['Geniemon Key'], "1", "2", "3"])
+                key = random.choice(random_key)
                 down_time = random.uniform(0.02, 0.12)
                 after_sleep = random.uniform(0.08, 0.15)
                 interaction = self.executor.interaction
