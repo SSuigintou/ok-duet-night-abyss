@@ -22,22 +22,22 @@ msgid "800%"
 msgstr ""
 
 msgid "Auto Pick"
-msgstr ""
+msgstr "自動擷取"
 
 msgid "Auto Pick in Game World"
-msgstr ""
+msgstr "大世界自動擷取"
 
 msgid "Check Monthly Card"
-msgstr ""
+msgstr "是否檢查月卡"
 
 msgid "Check for monthly card to avoid interruption of tasks"
-msgstr ""
+msgstr "設定避免小月卡彈跳窗打斷任務"
 
 msgid "Combat Key"
-msgstr ""
+msgstr "戰技"
 
 msgid "Dodge Key"
-msgstr ""
+msgstr "閃避按鍵"
 
 msgid "END_WAIT_SPACE"
 msgstr ""
@@ -55,28 +55,28 @@ msgid "F9"
 msgstr ""
 
 msgid "Game Hotkey Config"
-msgstr ""
+msgstr "遊戲快速鍵設定"
 
 msgid "Game Sensitivity Config"
-msgstr ""
+msgstr "遊戲靈敏度設定"
 
 msgid "Game Sensitivity Description"
-msgstr ""
+msgstr "使用轉動視角類型腳本時不再需要修改遊戲內靈敏度"
 
 msgid "Game Sensitivity Switch"
-msgstr ""
+msgstr "開關"
 
 msgid "Geniemon Key"
-msgstr ""
+msgstr "魔靈支援"
 
 msgid "HelixLeap Key"
-msgstr ""
+msgstr "螺旋飛躍按鍵"
 
 msgid "In Game Hotkey for Skills"
-msgstr ""
+msgstr "遊戲內技能快速鍵"
 
 msgid "Interact Key"
-msgstr ""
+msgstr "互動按鍵"
 
 msgid "MAX_END_SEC"
 msgstr ""
@@ -91,25 +91,25 @@ msgid "MAX_START_SEC"
 msgstr ""
 
 msgid "Monthly Card Config"
-msgstr ""
+msgstr "小月卡設定"
 
 msgid "Monthly Card Time"
-msgstr ""
+msgstr "月卡時間"
 
 msgid "Turn on to avoid interruption by monthly card when executing tasks"
-msgstr ""
+msgstr "開啟避免掛任務的時候被月卡中斷"
 
 msgid "Ultimate Key"
-msgstr ""
+msgstr "終結技"
 
 msgid "X-axis sensitivity"
-msgstr ""
+msgstr "遊戲內水平靈敏度"
 
 msgid "Y-axis sensitivity"
-msgstr ""
+msgstr "遊戲內垂直靈敏度"
 
 msgid "Your computer's local time when the monthly card will popup, hour in (1-24)"
-msgstr ""
+msgstr "幾點會跳出月卡提示, 本機電腦時間(1-24)"
 
 msgid "e"
 msgstr ""
